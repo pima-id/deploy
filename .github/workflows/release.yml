@@ -96,6 +96,20 @@ jobs:
       - name: Descargar imágenes actualizadas
         run: docker compose pull
 
+      # El init de MariaDB solo corre cuando el volumen esta vacio, asi que una vertical agregada
+      # despues de que produccion existiera se queda sin base — y eso se manifiesta como su migrador
+      # saliendo con 1, en el primer despliegue posterior, sin decir por que. Paso el 2026-09-30 con
+      # BIDA: la vertical llevaba cinco dias existiendo y su base nunca se habia creado.
+      #
+      # El script siempre fue idempotente (`IF NOT EXISTS`) y su propio comentario decia «correrlo a
+      # mano contra un volumen que ya existe». Una instruccion en prosa no la cumple nadie: acá la
+      # cumple el release. Levantar MariaDB primero es lo unico que cuesta, y el `--wait` de abajo
+      # ya lo hacia igual — lo unico nuevo es el orden.
+      - name: Asegurar bases y usuarios por contexto
+        run: |
+          docker compose up -d --wait mariadb
+          docker compose exec -T mariadb sh /docker-entrypoint-initdb.d/01-databases.sh
+
       - name: Desplegar contenedores y esperar estado saludable
         # --wait asegura que los healthchecks pasen antes de dar el paso por exitoso
         run: docker compose up -d --remove-orphans --wait
