@@ -81,6 +81,11 @@ jobs:
           fi
           echo "El .env tiene las $(grep -coE '\$\{[A-Z_][A-Z0-9_]*:\?' docker-compose.yml) obligatorias."
 
+      # Deliberadamente en v3 mientras las demas van en v4. v4 corre sobre Node 24 y exige un
+      # runner >= 2.327.1; este job corre en el runner self-hosted del VPS, cuya version la API no
+      # expone y no se pudo medir desde afuera. Un aviso de deprecacion en una accion cuesta menos
+      # que un workflow de release que no arranca. Se comprueba con `./run.sh --version` en el VPS,
+      # y si esta al dia el salto es esta linea.
       - name: Autenticar en GHCR
         uses: docker/login-action@v3
         with:

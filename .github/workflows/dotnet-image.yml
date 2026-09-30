@@ -30,7 +30,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Fijado, no `ubuntu-latest`: esa etiqueta migra a Ubuntu 26 el 19 de octubre de 2026 y nos
+    # movería sola, un martes, sin que nadie lo haya elegido. Con la version escrita, el dia que
+    # 24.04 se retire GitHub avisa y el salto se da cuando alguien lo decide — que es la diferencia
+    # entre enterarse y que te pase.
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       # Alcanza para publicar en GHCR con el GITHUB_TOKEN del propio workflow: ni un secreto que
@@ -49,7 +53,7 @@ jobs:
       # GitHub contesta `not found` en vez de `forbidden`, que es por lo que el mensaje despista.
       # El checkout usa el mismo token para el repo principal y para sus submodulos de github.com,
       # de modo que el PAT necesita `Contents: Read` sobre los dos.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
           token: ${{ secrets.KIT_READ_TOKEN || github.token }}
@@ -75,7 +79,7 @@ jobs:
           fi
           echo "Submodulos con contenido:$paths"
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
 
@@ -87,18 +91,18 @@ jobs:
 
       - run: dotnet test ${{ inputs.solution }} --no-build -c Release --verbosity normal
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       - name: Convertir owner a minúsculas
         run: echo "REPO_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: .
           push: true
