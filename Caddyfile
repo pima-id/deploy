@@ -30,7 +30,26 @@ http://{$CONSOLE_DOMAIN} {
 	reverse_proxy console:3000
 }
 
+# Platform, y **solo su webhook**. El motivo por el que esta publicada es una ruta: el gateway de
+# pagos no puede autenticarse contra nosotros, asi que su notificacion tiene que entrar de afuera.
+# Todo lo demas de esta API lo alcanza la consola por la red interna — el navegador nunca le habla.
+#
+# Publicar la API entera por un webhook ponia en internet las rutas anonimas de autenticacion:
+# login, alta, recuperacion de contrasena y pedido de codigos. Medido el 2026-09-30 desde afuera,
+# `POST /api/v1/auth/login` contestaba 400 — o sea que estaban ahi. Y la aplicacion **no tiene
+# rate limiter ni lee cabeceras reenviadas**, asi que ni siquiera podria limitar por IP.
+#
+# El limite por IP va en Cloudflare, que ya esta adelante y frena antes de llegar al VPS. Esta
+# regla es la otra mitad, y vive aca para que este en el repositorio y no en una consola web.
 http://{$PLATFORM_DOMAIN} {
 	encode zstd gzip
-	reverse_proxy platform-api:8080
+
+	@webhook path /api/v1/payments/notifications*
+	handle @webhook {
+		reverse_proxy platform-api:8080
+	}
+
+	handle {
+		respond 404
+	}
 }

@@ -32,9 +32,9 @@ services:
       TOURISM_DB_NAME: ${TOURISM_DB_NAME:-tourism}
       TOURISM_DB_USER: ${TOURISM_DB_USER:-tourism}
       TOURISM_DB_PASSWORD: ${TOURISM_DB_PASSWORD:?falta TOURISM_DB_PASSWORD en .env}
-      BIDA_DB_NAME: ${BIDA_DB_NAME:-automotive}
-      BIDA_DB_USER: ${BIDA_DB_USER:-automotive}
-      BIDA_DB_PASSWORD: ${BIDA_DB_PASSWORD:?falta BIDA_DB_PASSWORD en .env}
+      AUTOMOTIVE_DB_NAME: ${AUTOMOTIVE_DB_NAME:-automotive}
+      AUTOMOTIVE_DB_USER: ${AUTOMOTIVE_DB_USER:-automotive}
+      AUTOMOTIVE_DB_PASSWORD: ${AUTOMOTIVE_DB_PASSWORD:?falta AUTOMOTIVE_DB_PASSWORD en .env}
     volumes:
       - mariadb-data:/var/lib/mysql
       # Se ejecuta UNA sola vez, cuando el volumen esta vacio. Ver db/init/01-databases.sh.
@@ -84,12 +84,12 @@ services:
   # un migrador, un servicio, una base y un par de credenciales. Ni Platform ni PIMA cambiaron —
   # el motor no sabe que existen verticales y la plataforma sólo tiene una fila más en su tabla
   # de líneas de negocio.
-  bida-migrate:
-    image: ghcr.io/${GHCR_OWNER}/automotivecore:${BIDA_TAG:-latest}
+  automotive-migrate:
+    image: ghcr.io/${GHCR_OWNER}/automotivecore:${AUTOMOTIVE_TAG:-latest}
     command: ["Automotive.Migrator.dll"]
     restart: "no"
     environment:
-      ConnectionStrings__DefaultConnection: "Server=mariadb;Port=3306;Database=${BIDA_DB_NAME:-automotive};User=${BIDA_DB_USER:-automotive};Password=${BIDA_DB_PASSWORD};"
+      ConnectionStrings__DefaultConnection: "Server=mariadb;Port=3306;Database=${AUTOMOTIVE_DB_NAME:-automotive};User=${AUTOMOTIVE_DB_USER:-automotive};Password=${AUTOMOTIVE_DB_PASSWORD};"
     depends_on:
       mariadb: { condition: service_healthy }
     networks: [data]
@@ -197,20 +197,20 @@ services:
   # No esta en `edge`, igual que las otras dos APIs internas: a una vertical la llama la consola
   # por la red de servicios, y su superficie publica —la ficha de un vendedor— la sirve quien
   # tenga que servirla. Publicarla por accidente pide dos cambios y no uno.
-  bida-api:
-    image: ghcr.io/${GHCR_OWNER}/automotivecore:${BIDA_TAG:-latest}
+  automotive-api:
+    image: ghcr.io/${GHCR_OWNER}/automotivecore:${AUTOMOTIVE_TAG:-latest}
     <<: *restart
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__DefaultConnection: "Server=mariadb;Port=3306;Database=${BIDA_DB_NAME:-automotive};User=${BIDA_DB_USER:-automotive};Password=${BIDA_DB_PASSWORD};"
+      ConnectionStrings__DefaultConnection: "Server=mariadb;Port=3306;Database=${AUTOMOTIVE_DB_NAME:-automotive};User=${AUTOMOTIVE_DB_USER:-automotive};Password=${AUTOMOTIVE_DB_PASSWORD};"
       Jwt__Issuer: ${JWT_ISSUER:-https://platform.local}
       Jwt__SigningKey: ${JWT_SIGNING_KEY}
       Platform__BaseUrl: http://platform-api:8080
-      Platform__ClientId: ${BIDA_CLIENT_ID:?falta BIDA_CLIENT_ID en .env}
-      Platform__ClientSecret: ${BIDA_CLIENT_SECRET:?falta BIDA_CLIENT_SECRET en .env}
+      Platform__ClientId: ${AUTOMOTIVE_CLIENT_ID:?falta AUTOMOTIVE_CLIENT_ID en .env}
+      Platform__ClientSecret: ${AUTOMOTIVE_CLIENT_SECRET:?falta AUTOMOTIVE_CLIENT_SECRET en .env}
       Pima__BaseUrl: http://pima-api:8080
     depends_on:
-      bida-migrate: { condition: service_completed_successfully }
+      automotive-migrate: { condition: service_completed_successfully }
       pima-api: { condition: service_started }
     networks: [data, services]
 
@@ -242,7 +242,7 @@ services:
       # audiencia, y de ahí que el nombre viaje como configuración en vez de ser un literal en
       # tres repositorios.
       NUXT_PIMA_API_URL: http://pima-api:8080
-      NUXT_BIDA_API_URL: http://bida-api:8080
+      NUXT_BIDA_API_URL: http://automotive-api:8080
       NUXT_PIMA_AUDIENCE: PimaCore.Services
       # Adónde vuelve el enlace del encabezado. Público porque el navegador lo sigue.
       # El sitio publico, que ya no lo despliega este compose: es estatico, esta hecho en Astro
