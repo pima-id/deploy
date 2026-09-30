@@ -170,7 +170,7 @@ PIMA y Turismo no están en `edge`, así que publicarlos por accidente pide dos 
 En el VPS, una vez:
 
 ```bash
-git clone https://github.com/IIrola/deploy.git /opt/bit
+git clone https://github.com/pima-id/deploy.git /opt/bit
 cd /opt/bit
 cp .env.example .env && chmod 600 .env
 $EDITOR .env          # dominios, contraseñas, secretos — y BOOTSTRAP_* (abajo)
