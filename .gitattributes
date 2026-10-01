@@ -1,0 +1,13 @@
+# Todo lo que este repositorio contiene lo ejecuta Linux: el VPS y el runner. Un `.sh` que llegue
+# con CRLF falla de la peor manera posible —`/usr/bin/env bash^M: no such file or directory`, que
+# nombra el intérprete y no el archivo— y lo mismo vale para el SQL de inicialización, el Caddyfile
+# y el compose, que se leen adentro de contenedores.
+#
+# Está acá y no en la configuración de cada quien porque `core.autocrlf` es de la máquina: basta un
+# clon con otra configuración para que el problema vuelva, y entonces no es del archivo sino de
+# quién lo bajó.
+*.sh        text eol=lf
+*.sql       text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+Caddyfile   text eol=lf
