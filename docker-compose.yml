@@ -252,6 +252,16 @@ services:
       # La misma audiencia, del lado del navegador: el menú la necesita para leer en /auth/me si
       # esta sesión puede moderar. Es un identificador público, no una dirección ni un secreto.
       NUXT_PUBLIC_ENGINE_AUDIENCE: PimaCore.Services
+      # Qué nombre público es la puerta de cada vertical. La consola es la misma detrás; lo que
+      # cambia es qué vertical propone al abrir una cuenta, y eso lo resuelve del `Host` con el
+      # que la contactaron. Vacío significa que esa vertical no tiene puerta propia todavía, que
+      # es un estado legítimo: se entra por la neutra y el alta no inscribe a ninguna.
+      #
+      # **No es público**, y ahí está la garantía: el navegador no recibe el mapa, así que la
+      # vertical de un alta no es algo que el visitante elija. Varios nombres van separados por
+      # coma, igual que las direcciones de Caddy.
+      NUXT_DOOR_HOSTS_TOURISM: ${TOURISM_DOOR_HOSTS:-}
+      NUXT_DOOR_HOSTS_AUTOMOTIVE: ${AUTOMOTIVE_DOOR_HOSTS:-}
     depends_on:
       platform-api: { condition: service_started }
       tourism-api: { condition: service_started }
