@@ -189,10 +189,13 @@ services:
       Platform__ClientId: ${TOURISM_CLIENT_ID:?falta TOURISM_CLIENT_ID en .env}
       Platform__ClientSecret: ${TOURISM_CLIENT_SECRET:?falta TOURISM_CLIENT_SECRET en .env}
       Pima__BaseUrl: http://pima-api:8080
+      PublicEdge__RateLimitPerMinutePerIp: ${PUBLIC_RATE_LIMIT_PER_MINUTE:-30}
     depends_on:
       tourism-migrate: { condition: service_completed_successfully }
       pima-api: { condition: service_started }
-    networks: [data, services]
+    # `edge` solo para que el proxy alcance su superficie publica (/api/v1/public/*), que es lo unico
+    # que Caddy le rutea.
+    networks: [data, services, edge]
 
   # No esta en `edge`, igual que las otras dos APIs internas: a una vertical la llama la consola
   # por la red de servicios, y su superficie publica —la ficha de un vendedor— la sirve quien
@@ -209,10 +212,11 @@ services:
       Platform__ClientId: ${AUTOMOTIVE_CLIENT_ID:?falta AUTOMOTIVE_CLIENT_ID en .env}
       Platform__ClientSecret: ${AUTOMOTIVE_CLIENT_SECRET:?falta AUTOMOTIVE_CLIENT_SECRET en .env}
       Pima__BaseUrl: http://pima-api:8080
+      PublicEdge__RateLimitPerMinutePerIp: ${PUBLIC_RATE_LIMIT_PER_MINUTE:-30}
     depends_on:
       automotive-migrate: { condition: service_completed_successfully }
       pima-api: { condition: service_started }
-    networks: [data, services]
+    networks: [data, services, edge]
 
   # **El frontend es una sola aplicacion: la consola.**
   #
@@ -276,6 +280,9 @@ services:
     environment:
       CONSOLE_DOMAIN: ${CONSOLE_DOMAIN:?falta CONSOLE_DOMAIN en .env}
       PLATFORM_DOMAIN: ${PLATFORM_DOMAIN:?falta PLATFORM_DOMAIN en .env}
+      # Opcionales: sin valor apuntan a un host que no existe y esa superficie publica queda sin publicar.
+      TOURISM_PUBLIC_DOMAIN: ${TOURISM_PUBLIC_DOMAIN:-tourism-public.disabled.invalid}
+      AUTOMOTIVE_PUBLIC_DOMAIN: ${AUTOMOTIVE_PUBLIC_DOMAIN:-automotive-public.disabled.invalid}
       ACME_EMAIL: ${ACME_EMAIL:?falta ACME_EMAIL en .env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro

@@ -40,6 +40,42 @@ http://{$CONSOLE_DOMAIN} {
 #
 # El limite por IP va en Cloudflare, que ya esta adelante y frena antes de llegar al VPS. Esta
 # regla es la otra mitad, y vive aca para que este en el repositorio y no en una consola web.
+# La superficie publica de una vertical, **y solo ella**: la ficha de una persona y el si/no de «esta
+# registrado». Es lo unico de la API que un navegador de otro origen tiene que alcanzar (el sitio
+# estatico, en Astro), y publicarla es una decision de negocio registrada, no un descuido.
+#
+# Lo que la protege es la aplicacion, no este proxy: lee la IP real de X-Forwarded-For (la red `edge`
+# esta declarada como proxy de confianza), limita por IP —30 por minuto, como el legado— y contesta
+# CORS. El resto de la API sigue sin ruta: cualquier otro camino da 404 aca.
+#
+# Sin el nombre en el `.env` el bloque apunta a un host que no existe y no recibe nada.
+http://{$TOURISM_PUBLIC_DOMAIN} {
+	encode zstd gzip
+
+	@public path /api/v1/public/*
+	handle @public {
+		reverse_proxy tourism-api:8080
+	}
+
+	handle {
+		respond 404
+	}
+}
+
+# Igual que el bloque anterior, para la otra vertical.
+http://{$AUTOMOTIVE_PUBLIC_DOMAIN} {
+	encode zstd gzip
+
+	@public path /api/v1/public/*
+	handle @public {
+		reverse_proxy automotive-api:8080
+	}
+
+	handle {
+		respond 404
+	}
+}
+
 http://{$PLATFORM_DOMAIN} {
 	encode zstd gzip
 
