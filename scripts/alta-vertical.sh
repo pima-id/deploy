@@ -66,12 +66,11 @@ VERTICALES=(
 #   evaluations.read       PIMA       la vertical no puede releer lo que pidió
 #   directory.read         PIMA       la ficha pública y el buscador responden 503
 #   possession.read        Platform   no puede preguntar quién probó qué contacto
-#   directory.search       PIMA       el buscador con widget responde 503 (el minimal sigue andando)
-#   searchwidgets.resolve  Platform   un token de widget no se reconoce: el buscador degrada a minimal
-#   searchwidgets.log      Platform   no se puede anotar la busqueda y la respuesta falla
 #   businesslines.resolve  Platform   arranca sin haber confirmado su línea, y lo dice en el log
-SCOPES_PIMA='["evaluations.request","evaluations.read","directory.read","directory.search"]'
-SCOPES_PLATFORM='["possession.read","businesslines.resolve","searchwidgets.resolve","searchwidgets.log"]'
+#   search.run             PIMA       el buscador público de los contratos responde 503
+#   searchwidgets.use      Platform   el buscador público no reconoce ningún token (404)
+SCOPES_PIMA='["evaluations.request","evaluations.read","directory.read","search.run"]'
+SCOPES_PLATFORM='["possession.read","businesslines.resolve","searchwidgets.use"]'
 
 # ───────────────────────────────────────────────────────────────────────────────── herramientas
 log()   { printf '%s\n' "$*"; }
