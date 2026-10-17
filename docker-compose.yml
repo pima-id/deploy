@@ -106,6 +106,7 @@ services:
       # Sin el secreto del webhook la API se niega a arrancar, y eso es deliberado: la
       # notificacion de pago es su unica ruta anonima y sin secreto no tiene contra que verificar.
       MercadoPago__AccessToken: ${MERCADOPAGO_ACCESS_TOKEN:?falta MERCADOPAGO_ACCESS_TOKEN en .env}
+      MercadoPago__PublicKey: ${MERCADOPAGO_PUBLIC_KEY:?falta MERCADOPAGO_PUBLIC_KEY en .env}
       MercadoPago__WebhookSecret: ${MERCADOPAGO_WEBHOOK_SECRET:?falta MERCADOPAGO_WEBHOOK_SECRET en .env}
       # Correo saliente. **El interruptor es el host**: sin `Email__Smtp__Host`, Platform registra
       # `LoggingEmailSender` y se limita a anotar en el log que *habria* mandado el correo — asi
