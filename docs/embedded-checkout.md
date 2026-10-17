@@ -1,5 +1,10 @@
 # Publicación del checkout embebido
 
+**Estado vigente, 2026-10-17: PAGOS REABIERTO.** El usuario reportó acreditación sin webhook;
+la auditoría confirmó que refresh y conciliación pueden entregar por GET autoritativo sin
+evento. El cierre registrado más abajo queda revocado. No hay corrección productiva en este
+cambio documental; el plan está en PIMAPlatform/docs/payments-webhook-audit.md.
+
 Publicar coordinadamente las ramas codex/mercadopago-embedded de Platform, BitFront y deploy.
 Antes de reiniciar, configurar MERCADOPAGO_PUBLIC_KEY junto al access token y secreto existentes,
 los tres de la misma aplicación/entorno mexicano. El compose lo pasa como MercadoPago__PublicKey.
