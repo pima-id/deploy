@@ -1,9 +1,9 @@
 # Publicación del checkout embebido
 
-**Estado vigente, 2026-10-17: PAGOS REABIERTO.** El usuario reportó acreditación sin webhook;
-la auditoría confirmó que refresh y conciliación pueden entregar por GET autoritativo sin
-evento. El cierre registrado más abajo queda revocado. No hay corrección productiva en este
-cambio documental; el plan está en PIMAPlatform/docs/payments-webhook-audit.md.
+**Estado vigente, 2026-10-17: corrección implementada en main y validada localmente.**
+La primera acreditación exige webhook auténtico y consulta autoritativa. Refresh y mantenimiento
+no sustituyen la notificación. El cierre y reapertura siguientes son el registro histórico;
+publicación pendiente, sin despliegue al VPS por este cambio.
 
 Publicar coordinadamente las ramas codex/mercadopago-embedded de Platform, BitFront y deploy.
 Antes de reiniciar, configurar MERCADOPAGO_PUBLIC_KEY junto al access token y secreto existentes,
@@ -36,3 +36,26 @@ a /api/v1/payments/notifications*. Mantener los eventos order y payment históri
 La auditoría de devoluciones está en PIMAPlatform/docs/refunds-audit.md y en el tablero global.
 No hay cambios de Compose, secretos, imágenes ni migraciones por esta auditoría. El plan deberá
 añadir conciliación de devoluciones inciertas y pruebas de webhook firmado al implementarse.
+
+## Publicación de confirmación obligatoria por webhook
+
+1. Usar el migrador de la nueva versión Platform: aplicar
+   20261017185044_RequireVerifiedPaymentWebhook antes de arrancar ese backend.
+   Añade PaymentNotifications.AuthenticatedAtUtc y Orders.ConfirmedByNotificationId/
+   PaymentConfirmedAtUtc, todos nullable. No elimina datos ni presume autenticación histórica.
+2. Publicar Platform primero y la consola después. El backend cierra la vía de acreditación
+   por refresh incluso para la consola anterior. No se cambia el compose ni se agregan secretos.
+3. Mantener URL HTTPS /api/v1/payments/notifications y eventos order y payment histórico.
+   Nuxt usa http://platform-api:8080 por Docker; la notificación entra por Caddy.
+4. Validar en cuenta de pruebas: Orders procesado sin webhook mantiene Pending/awaitingWebhook,
+   cero créditos y sin nuevo plan. Después de un webhook válido del mismo recurso más GET correcto,
+   Fulfilled tiene confirmedByNotificationId y paymentConfirmedAtUtc, sin entrega duplicada.
+5. Un POST sin firma sigue respondiendo rejected: sólo prueba el enrutamiento. Un pago sin
+   webhook no se acredita por el job; genera advertencia con OrderId/ResourceId. El job puede
+   retomar únicamente recibos autenticados Received/Retry, con el intervalo configurado.
+
+No backfillear autenticación ni revertir compras históricas automáticamente: una orden previa
+con columnas nuevas vacías requiere contrastar pagos, inbox y fechas. No se hicieron cobros reales,
+no se certificó Mercado Pago ni se accedió al VPS en esta entrega. Validación local: 1,057 backend,
+586 frontend, lint, tipos, build y 4 Chrome con webhook firmado explícito y pasarela simulada.
+Modelo EF coherente; Docker no disponible para repetir la migración en MariaDB.
