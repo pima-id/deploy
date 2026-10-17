@@ -15,3 +15,19 @@ para compras históricas. Orders no admite configurar notification_url en el bod
 
 Probar con una cuenta de pruebas: tarjeta aprobada, rechazo y segundo intento, cuotas,
 notificación repetida, resultado tardío y reembolso. Los tests aislados no certifican esa cuenta.
+
+## Cierre registrado — 2026-10-17
+
+PR deploy #1, Platform #2 y web #5 fusionados; pagos cerrado por instrucción del usuario.
+El usuario confirmó que funciona el POST público al webhook en api.pima-id.com.
+La respuesta esperada sin firma es 200 con status=rejected: confirma enrutamiento al controller,
+no una notificación firmada ni un cobro real. No se inspeccionó directamente el VPS.
+
+Nuxt recibe NUXT_PLATFORM_API_URL=http://platform-api:8080 y alcanza Platform por la red services
+de Docker; no necesita DNS público del API. Compose inyecta PLATFORM_DOMAIN a Caddy desde .env
+o el archivo indicado con --env-file. Esa variable no crea DNS. El ingreso público se limita
+a /api/v1/payments/notifications*. Mantener los eventos order y payment histórico.
+
+La auditoría de devoluciones está en PIMAPlatform/docs/refunds-audit.md y en el tablero global.
+No hay cambios de Compose, secretos, imágenes ni migraciones por esta auditoría. El plan deberá
+añadir conciliación de devoluciones inciertas y pruebas de webhook firmado al implementarse.
