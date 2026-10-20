@@ -11,9 +11,10 @@
 # repositorio, en Astro, y entran a este producto enlazando el inicio de sesion y el alta de la
 # consola. Lo que este proxy publica es lo que necesita una sesion.
 #
-# PIMA, BIT y BIDA siguen sin nombre. A PIMA solo la llaman servicios, y a las verticales la
-# consola por la red interna. Ademas de no estar ruteadas, no estan en la red `edge` del compose:
-# publicarlas por accidente requeriria dos cambios y no uno.
+# BIT y BIDA siguen sin nombre propio salvo su superficie publica. PIMA tampoco, salvo una ruta:
+# la API por credencial de contrato (`/api/v1/contract-api/*`), bajo PIMA_PUBLIC_DOMAIN. Lo demas
+# de PIMA solo lo llaman servicios, y el Caddyfile no le rutea nada mas: un camino que no este
+# nombrado aca da 404 en el proxy.
 #
 # Una vertical nueva es un bloque mas aca, y nada mas.
 {
@@ -82,6 +83,40 @@ http://{$PLATFORM_DOMAIN} {
 	@webhook path /api/v1/payments/notifications*
 	handle @webhook {
 		reverse_proxy platform-api:8080
+	}
+
+	# La segunda ruta anonima publicada: donde una credencial de contrato cambia su secreto por un
+	# token de 10 minutos para la API de PIMA. Solo ese POST; el resto de `/api/v1/contract-api/*`
+	# de Platform (administracion de credenciales) lo alcanza la consola por la red interna.
+	@contractToken {
+		method POST
+		path /api/v1/contract-api/token
+	}
+	handle @contractToken {
+		reverse_proxy platform-api:8080
+	}
+
+	handle {
+		respond 404
+	}
+}
+
+# PIMA, y **solo la API por credencial de contrato**: verify-email y verify-phone, que llama la
+# integracion de un cliente con el token que obtuvo de Platform. Es lo unico de PIMA que sale a
+# internet; cualquier otro camino da 404 aca, no un 401 de la aplicacion.
+#
+# La protege la aplicacion: exige un token con la marca de credencial de contrato, toma el contrato
+# del token (nunca de una cabecera), lee la IP real de X-Forwarded-For (la red `edge` esta declarada
+# como proxy de confianza) y limita por credencial —60 por minuto por defecto—. El limite por IP de
+# la entrada vive ademas en Cloudflare.
+#
+# Sin el nombre en el `.env` el bloque apunta a un host que no existe y no recibe nada.
+http://{$PIMA_PUBLIC_DOMAIN} {
+	encode zstd gzip
+
+	@contract path /api/v1/contract-api/*
+	handle @contract {
+		reverse_proxy pima-api:8080
 	}
 
 	handle {

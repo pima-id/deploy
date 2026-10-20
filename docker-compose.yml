@@ -168,15 +168,18 @@ services:
       # una denuncia son documentos de identidad, y en el legacy se servian sin token por estar
       # dentro de wwwroot.
       Reports__EvidenceRoot: /var/lib/pima/evidence
+      # La API por credencial de contrato es la unica superficie de PIMA que sale a internet
+      # (ver el Caddyfile). Limite por credencial, por minuto.
+      ContractApi__RateLimitPerMinute: ${CONTRACT_API_RATE_LIMIT_PER_MINUTE:-60}
     volumes:
       - pima-evidence:/var/lib/pima/evidence
     depends_on:
       pima-migrate: { condition: service_completed_successfully }
       platform-api: { condition: service_started }
-    # Sin `edge`: a PIMA solo lo llaman servicios, asi que el proxy no puede alcanzarlo aunque
-    # alguien escriba la regla. `services` le da la salida a internet que si necesita — es quien
-    # llama al proveedor de evidencia.
-    networks: [data, services]
+    # `edge` solo para que el proxy alcance su superficie publica (/api/v1/contract-api/*), que es lo
+    # unico que Caddy le rutea; el resto de PIMA, aunque este en la red, no tiene ruta. `services` le
+    # da la salida a internet que necesita — es quien llama al proveedor de evidencia.
+    networks: [data, services, edge]
 
   tourism-api:
     image: ghcr.io/${GHCR_OWNER}/tourismcore:${TOURISM_TAG:-latest}
@@ -284,6 +287,7 @@ services:
       # Opcionales: sin valor apuntan a un host que no existe y esa superficie publica queda sin publicar.
       TOURISM_PUBLIC_DOMAIN: ${TOURISM_PUBLIC_DOMAIN:-tourism-public.disabled.invalid}
       AUTOMOTIVE_PUBLIC_DOMAIN: ${AUTOMOTIVE_PUBLIC_DOMAIN:-automotive-public.disabled.invalid}
+      PIMA_PUBLIC_DOMAIN: ${PIMA_PUBLIC_DOMAIN:-pima-public.disabled.invalid}
       ACME_EMAIL: ${ACME_EMAIL:?falta ACME_EMAIL en .env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
@@ -301,8 +305,9 @@ services:
 #              evidencia y al gateway de pagos.
 #   services — servicio con servicio, mas esa salida. Ningun puerto publicado: no se llega desde
 #              afuera.
-#   edge     — lo unico que el proxy alcanza. PIMA y BIT no estan aca, asi que publicarlos por
-#              accidente pide dos cambios y no uno.
+#   edge     — lo unico que el proxy alcanza. Las APIs que estan aca lo estan solo por su superficie
+#              publica (PIMA: contract-api; las verticales: /api/v1/public/*) y el Caddyfile rutea
+#              unicamente esas rutas.
 networks:
   data:
     internal: true
