@@ -194,6 +194,13 @@ services:
       Platform__ClientSecret: ${TOURISM_CLIENT_SECRET:?falta TOURISM_CLIENT_SECRET en .env}
       Pima__BaseUrl: http://pima-api:8080
       PublicEdge__RateLimitPerMinutePerIp: ${PUBLIC_RATE_LIMIT_PER_MINUTE:-30}
+      # El buscador publico. Sin secreto de Turnstile toda busqueda se rechaza: el captcha no es
+      # opcional. El origen es el del sitio de la vertical que sirve la pagina. Detras de Cloudflare
+      # la direccion del visitante viene en CF-Connecting-IP, no en X-Forwarded-For.
+      PublicSearch__TurnstileSecretKey: ${TURNSTILE_SECRET_KEY:-}
+      PublicSearch__AllowedOrigins__0: ${TOURISM_SITE_ORIGIN:-}
+      PublicSearch__ClientIpHeader: ${PUBLIC_SEARCH_CLIENT_IP_HEADER:-CF-Connecting-IP}
+      PublicSearch__RateLimitPerMinutePerIp: ${PUBLIC_SEARCH_RATE_LIMIT_PER_MINUTE:-30}
     depends_on:
       tourism-migrate: { condition: service_completed_successfully }
       pima-api: { condition: service_started }
@@ -217,6 +224,13 @@ services:
       Platform__ClientSecret: ${AUTOMOTIVE_CLIENT_SECRET:?falta AUTOMOTIVE_CLIENT_SECRET en .env}
       Pima__BaseUrl: http://pima-api:8080
       PublicEdge__RateLimitPerMinutePerIp: ${PUBLIC_RATE_LIMIT_PER_MINUTE:-30}
+      # El buscador publico. Sin secreto de Turnstile toda busqueda se rechaza: el captcha no es
+      # opcional. El origen es el del sitio de la vertical que sirve la pagina. Detras de Cloudflare
+      # la direccion del visitante viene en CF-Connecting-IP, no en X-Forwarded-For.
+      PublicSearch__TurnstileSecretKey: ${TURNSTILE_SECRET_KEY:-}
+      PublicSearch__AllowedOrigins__0: ${AUTOMOTIVE_SITE_ORIGIN:-}
+      PublicSearch__ClientIpHeader: ${PUBLIC_SEARCH_CLIENT_IP_HEADER:-CF-Connecting-IP}
+      PublicSearch__RateLimitPerMinutePerIp: ${PUBLIC_SEARCH_RATE_LIMIT_PER_MINUTE:-30}
     depends_on:
       automotive-migrate: { condition: service_completed_successfully }
       pima-api: { condition: service_started }
@@ -289,6 +303,9 @@ services:
       AUTOMOTIVE_PUBLIC_DOMAIN: ${AUTOMOTIVE_PUBLIC_DOMAIN:-automotive-public.disabled.invalid}
       PIMA_PUBLIC_DOMAIN: ${PIMA_PUBLIC_DOMAIN:-pima-public.disabled.invalid}
       ACME_EMAIL: ${ACME_EMAIL:?falta ACME_EMAIL en .env}
+      # Sin configurar, un dominio .invalid: nadie llega. El valor por defecto va aca y no solo en
+      # el Caddyfile, porque Caddy usa su `{$VAR:default}` sólo si la variable NO existe; una
+      # variable presente y vacía da `http://` dos veces y el proxy entero no arranca.
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       # Los certificados sobreviven a un redespliegue. Sin esto, cada `up` vuelve a pedirlos y
