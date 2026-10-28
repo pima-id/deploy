@@ -1,10 +1,24 @@
 # Opt-in overlay. Merely adding this file enables no new commercial operation.
 # Use only after the coordinated cutover runbook and with reviewed immutable image tags.
+#
+# Switch dependencies. Every service checks its own at startup and REFUSES TO START (naming the variable)
+# rather than run with a switch silently dead:
+#   DELEGATED_EVALUATIONS_ENABLED -> needs VERTICAL_BILLING_ENABLED on Platform, plus a key ring and the
+#                                    engine's client id (PIMA_CLIENT_ID); PIMA and both verticals need their
+#                                    own key ring (all provided below).
+#   LINE_BENEFITS_ENABLED         -> deployment rule, not a startup check: turn on together with
+#                                    COVERAGE_DELIVERY_ENABLED and VERTICAL_BILLING_ENABLED (Platform
+#                                    observes and the verticals receive the same coverage).
+#   CENTRAL_CATALOGUE_ADMINISTRATION_ENABLED -> needs at least one vertical with its *_CLIENT_ID set.
+# Independent by design: VERTICAL_BILLING_ENABLED (sales), LINE_MAINTENANCE_ENABLED (recovery keeps running
+# while sales are paused), PUBLIC_LINE_CATALOGUE_ENABLED, and CATALOGUE_DELIVERY_ENABLED (defaults on so a
+# line can keep publishing offers).
 services:
   platform-api:
     environment:
       VerticalBilling__Enabled: ${VERTICAL_BILLING_ENABLED:-false}
       DelegatedVerification__Enabled: ${DELEGATED_EVALUATIONS_ENABLED:-false}
+      DelegatedVerification__RecipientService: ${PIMA_CLIENT_ID:-pima-core}
       DelegatedVerification__KeyRingPath: /var/lib/platform/operation-keys
       CoverageDelivery__Enabled: ${COVERAGE_DELIVERY_ENABLED:-false}
       LineBenefits__Enabled: ${LINE_BENEFITS_ENABLED:-false}
@@ -15,14 +29,12 @@ services:
       CatalogueAdministration__Targets__automotive__ClientId: ${AUTOMOTIVE_CLIENT_ID}
       CatalogueAdministration__Targets__automotive__Audience: AutomotiveCore.Catalogue
       PublicLineCatalogue__Enabled: ${PUBLIC_LINE_CATALOGUE_ENABLED:-false}
-      LegacyCommercialCutover__Enabled: ${LEGACY_COMMERCIAL_CUTOVER_ENABLED:-false}
     volumes:
       - platform-operation-keys:/var/lib/platform/operation-keys
   pima-api:
     environment:
       DelegatedEvaluations__Enabled: ${DELEGATED_EVALUATIONS_ENABLED:-false}
       DelegatedEvaluations__KeyRingPath: /var/lib/pima/operation-keys
-      LegacyCommercialCutover__Enabled: ${LEGACY_COMMERCIAL_CUTOVER_ENABLED:-false}
     volumes:
       - pima-operation-keys:/var/lib/pima/operation-keys
   tourism-api:
@@ -49,7 +61,6 @@ services:
     environment:
       NUXT_PUBLIC_VERTICAL_BILLING_ENABLED: ${VERTICAL_BILLING_ENABLED:-false}
       NUXT_PUBLIC_CENTRAL_CATALOGUE_ADMINISTRATION_ENABLED: ${CENTRAL_CATALOGUE_ADMINISTRATION_ENABLED:-false}
-      NUXT_PUBLIC_COMMERCIAL_CUTOVER_ENABLED: ${LEGACY_COMMERCIAL_CUTOVER_ENABLED:-false}
 volumes:
   platform-operation-keys:
   pima-operation-keys:
