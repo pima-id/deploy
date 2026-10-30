@@ -145,6 +145,11 @@ services:
       # valida es Platform, que es donde la regla puede ser condicional: enciende y sin
       # contrasena avisa y no hace nada, y con menos de 12 caracteres **se niega** — esta cuenta
       # tiene todos los permisos de la plataforma.
+      # Cobro por linea de negocio. Apagado por defecto: las rutas de venta, saldo y seleccion de linea
+      # (incluida la linea de la API por contrato) responden 403 mientras sea false. Es el mismo valor que
+      # el overlay docker-compose.vertical-billing.yml; repetirlo aca es inocuo y permite encender solo este
+      # interruptor sin el resto del corte.
+      VerticalBilling__Enabled: ${VERTICAL_BILLING_ENABLED:-false}
       Bootstrap__Enabled: ${BOOTSTRAP_ENABLED:-false}
       Bootstrap__Email: ${BOOTSTRAP_EMAIL:-}
       Bootstrap__Password: ${BOOTSTRAP_PASSWORD:-}
