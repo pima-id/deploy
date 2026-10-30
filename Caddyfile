@@ -94,17 +94,6 @@ http://{$PLATFORM_DOMAIN} {
 		reverse_proxy platform-api:8080
 	}
 
-	# La segunda ruta anonima publicada: donde una credencial de contrato cambia su secreto por un
-	# token de 10 minutos para la API de PIMA. Solo ese POST; el resto de `/api/v1/contract-api/*`
-	# de Platform (administracion de credenciales) lo alcanza la consola por la red interna.
-	@contractToken {
-		method POST
-		path /api/v1/contract-api/token
-	}
-	handle @contractToken {
-		reverse_proxy platform-api:8080
-	}
-
 	handle {
 		respond 404
 	}

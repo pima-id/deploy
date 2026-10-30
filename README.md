@@ -148,7 +148,7 @@ Dos nombres públicos, y es una decisión de seguridad:
 | Sitio de la plataforma | sí | Qué hace el producto, para quién y cuánto sale. **Anónimo de punta a punta**: no despliega rutas de sesión, así que no hay forma de establecer una — comprobado contra la imagen, `POST /api/auth/login` responde 404 |
 | Sitio de la vertical de turismo | sí, en su propio nombre | El directorio público y lo que turismo le dice a un viajero. Anónimo por el mismo motivo y comprobado igual. **Un nombre por vertical**: sumar la segunda es un servicio, un bloque en el Caddyfile y una línea en el `.env` |
 | Consola | sí, en su propio nombre | Sólo autenticada. Su hostname aparte es lo que permite restringirla sin tocar lo que debe ser público. Su proxy de Nitro alcanza las APIs por la red interna |
-| Platform | sí | La notificación de pago es anónima y la manda el gateway desde afuera; y `POST /api/v1/contract-api/token`, donde una credencial de contrato cambia su secreto por un token |
+| Platform | sí | La notificación de pago es anónima y la manda el gateway desde afuera. Nada más: la credencial de contrato se valida en PIMA contra Platform por la red interna |
 | **PIMA** | **sólo una ruta** | `/api/v1/contract-api/*` (verify-email, verify-phone) bajo `PIMA_PUBLIC_DOMAIN`, opcional: sin valor no se publica. Todo lo demás de PIMA sólo lo llaman servicios y da 404 en el proxy |
 | **Turismo** | **no** | Lo público suyo lo sirve su propio sitio, `tourism-web`, por la red interna |
 
