@@ -149,6 +149,9 @@ services:
       # (incluida la linea de la API por contrato) responden 403 mientras sea false. Es el mismo valor que
       # el overlay docker-compose.vertical-billing.yml; repetirlo aca es inocuo y permite encender solo este
       # interruptor sin el resto del corte.
+      # Direccion publica de la consola (https://...). Con ella los correos de invitacion llevan un enlace a
+      # la pantalla donde se elige la contrasena. Vacia: el correo trae solo el codigo.
+      Invitation__ConsoleBaseUrl: ${CONSOLE_PUBLIC_URL:-}
       VerticalBilling__Enabled: ${VERTICAL_BILLING_ENABLED:-false}
       Bootstrap__Enabled: ${BOOTSTRAP_ENABLED:-false}
       Bootstrap__Email: ${BOOTSTRAP_EMAIL:-}
