@@ -259,6 +259,9 @@ services:
       # arrancar, a propósito — un valor por defecto sería una contraseña compartida por toda
       # instalación que se olvidara de poner la suya, o sea una cookie que parece sellada.
       # Sólo la consola la lleva: las dos apps públicas son anónimas y no tienen qué sellar.
+      # Mismo interruptor que en platform-api: con false la consola muestra las pantallas de linea en pausa
+      # (p. ej. 'Las nuevas concesiones estan pausadas') aunque Platform ya las acepte.
+      NUXT_PUBLIC_VERTICAL_BILLING_ENABLED: ${VERTICAL_BILLING_ENABLED:-false}
       NUXT_SESSION_SECRET: ${SESSION_SECRET:?falta SESSION_SECRET en .env}
       # El navegador no habla con las APIs: el proxy de Nitro las alcanza por la red interna.
       NUXT_PLATFORM_API_URL: http://platform-api:8080
