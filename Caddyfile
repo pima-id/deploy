@@ -19,6 +19,15 @@
 # Una vertical nueva es un bloque mas aca, y nada mas.
 {
 	email {$ACME_EMAIL}
+
+	# Todos los bloques de abajo son `http://`: el TLS lo termina quien esta adelante (Cloudflare y
+	# el proxy del VPS) y este Caddy solo publica el puerto 80 en loopback. Una direccion sin esquema
+	# —el segundo host de `CONSOLE_DOMAIN=a.com,b.com`, ya que el `http://` de la plantilla solo
+	# alcanza al primero— activa el HTTPS automatico de Caddy y con el un 308 hacia https. Detras de
+	# un proxy que habla HTTP con el origen eso es un bucle de redirecciones. Medido el 2026-11-14 con
+	# la puerta de BIDA: el 308 lo devolvia Caddy, no Plesk ni Cloudflare. Sin redirecciones, el `.env`
+	# no tiene que acordarse de escribir el esquema en cada host.
+	auto_https disable_redirects
 }
 
 # **Dos nombres publicos y no cuatro.** Los sitios estaticos —el de cada vertical y el de la
