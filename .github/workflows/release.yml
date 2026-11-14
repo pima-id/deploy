@@ -88,19 +88,23 @@ jobs:
       # que en Caddy significa HTTPS: activa el HTTPS automatico, redirige el puerto 80 con un 308
       # y no se atiende por HTTP. Detras de Cloudflare y Plesk, que le hablan HTTP, eso es un bucle de
       # redirecciones. Paso el 2026-11-14 con la puerta de BIDA, y el 308 lo devolvia Caddy: ni Plesk
-      # ni Cloudflare. Segun la documentacion de Caddy un host sin esquema se sirve por HTTPS y
-      # `auto_https disable_redirects`/`off` no lo pasan a HTTP; que el puerto 80 quede sin ruta es
-      # una inferencia que no se probo contra un Caddy real. Lo comprobado es la salida: con `http://`
-      # escrito en el host adicional funciona. Por eso se exige el esquema y se avisa antes de desplegar.
+      # ni Cloudflare. Probado contra Caddy 2 el 2026-11-14: el host sin esquema contesta
+      # `308 → https://`; con `http://` escrito se sirve por HTTP. Segun la documentacion, ninguna
+      # opcion global (`auto_https disable_redirects`/`off`) lo pasa a HTTP, por eso se exige el
+      # esquema y se avisa antes de desplegar.
+      #
+      # Los hosts se separan con coma **y un espacio**: Caddy no parsea `a.com,http://b.com`
+      # («put a space after the comma»). Aca se tolera cualquiera de los dos separadores para poder
+      # nombrar al host que falla; el `caddy validate` de mas abajo rechaza el que no parsea.
       - name: Comprobar que los hosts adicionales de la consola llevan http://
         run: |
-          dom=$(sed -n 's/^[[:space:]]*CONSOLE_DOMAIN=//p' .env | tail -1 | tr -d "\"' \r")
-          sin=$(printf '%s' "$dom" | tr ',' '\n' | tail -n +2 | grep -viE '^http://' | grep -v '^$' || true)
+          dom=$(sed -n 's/^[[:space:]]*CONSOLE_DOMAIN=//p' .env | tail -1 | tr -d "\"'\r")
+          sin=$(printf '%s' "$dom" | tr ' ,' '\n\n' | grep -v '^$' | tail -n +2 | grep -viE '^http://' || true)
           if [ -n "$sin" ]; then
             echo "ERROR: estos hosts de CONSOLE_DOMAIN no llevan http://, y Caddy los redirige a HTTPS en bucle:"
             printf '  %s\n' "$sin"
             echo ""
-            echo "Ejemplo: CONSOLE_DOMAIN=consola.ejemplo.com,http://app.otra-puerta.com"
+            echo "Ejemplo (coma y espacio): CONSOLE_DOMAIN=consola.ejemplo.com, http://app.otra-puerta.com"
             exit 1
           fi
           echo "CONSOLE_DOMAIN: los hosts adicionales llevan http://."
