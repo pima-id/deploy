@@ -81,6 +81,30 @@ jobs:
           fi
           echo "El .env tiene las $(grep -coE '\$\{[A-Z_][A-Z0-9_]*:\?' docker-compose.yml) obligatorias."
 
+      # Cada host de CONSOLE_DOMAIN despues del primero lleva `http://` escrito.
+      #
+      # El Caddyfile abre ese bloque con `http://{$CONSOLE_DOMAIN}`, y Caddy expande la variable antes
+      # de parsear: con `a.com,b.com` el `http://` solo alcanza a `a.com`. `b.com` queda sin esquema,
+      # que en Caddy significa HTTPS: activa el HTTPS automatico, redirige el puerto 80 con un 308
+      # y no se atiende por HTTP. Detras de Cloudflare y Plesk, que le hablan HTTP, eso es un bucle de
+      # redirecciones. Paso el 2026-11-14 con la puerta de BIDA, y el 308 lo devolvia Caddy: ni Plesk
+      # ni Cloudflare. Segun la documentacion de Caddy un host sin esquema se sirve por HTTPS y
+      # `auto_https disable_redirects`/`off` no lo pasan a HTTP; que el puerto 80 quede sin ruta es
+      # una inferencia que no se probo contra un Caddy real. Lo comprobado es la salida: con `http://`
+      # escrito en el host adicional funciona. Por eso se exige el esquema y se avisa antes de desplegar.
+      - name: Comprobar que los hosts adicionales de la consola llevan http://
+        run: |
+          dom=$(sed -n 's/^[[:space:]]*CONSOLE_DOMAIN=//p' .env | tail -1 | tr -d "\"' \r")
+          sin=$(printf '%s' "$dom" | tr ',' '\n' | tail -n +2 | grep -viE '^http://' | grep -v '^$' || true)
+          if [ -n "$sin" ]; then
+            echo "ERROR: estos hosts de CONSOLE_DOMAIN no llevan http://, y Caddy los redirige a HTTPS en bucle:"
+            printf '  %s\n' "$sin"
+            echo ""
+            echo "Ejemplo: CONSOLE_DOMAIN=consola.ejemplo.com,http://app.otra-puerta.com"
+            exit 1
+          fi
+          echo "CONSOLE_DOMAIN: los hosts adicionales llevan http://."
+
       # v4 corre sobre Node 24 y exige un runner >= 2.327.1. Este job no corre en un runner de
       # GitHub sino en el self-hosted del VPS, y la API devuelve su version como `null` — pero el
       # runner la imprime en el log de sus propias corridas: **2.337.0**, comodo por encima del
@@ -113,6 +137,20 @@ jobs:
       - name: Desplegar contenedores y esperar estado saludable
         # --wait asegura que los healthchecks pasen antes de dar el paso por exitoso
         run: docker compose up -d --remove-orphans --wait
+
+      # El Caddyfile entra al contenedor como bind mount de un archivo. `git pull` lo reemplaza por
+      # otro archivo (otro inodo) y el contenedor sigue viendo el viejo, y `up -d` no lo recrea
+      # porque la definicion del servicio no cambio: un cambio de ruteo se pushea, el release sale
+      # en verde y produccion sigue con el Caddyfile anterior. Se recrea siempre; cuesta un
+      # parpadeo del puerto 80 y los certificados sobreviven en el volumen caddy-data.
+      #
+      # Se valida **antes** de recrear: un Caddyfile que no parsea dejaria el contenedor reiniciandose
+      # y todas las puertas caidas, cuando hasta aca el proxy viejo seguia sirviendo. `run` crea un
+      # contenedor nuevo, que monta el archivo ya actualizado, y trae las variables del servicio.
+      - name: Aplicar el Caddyfile
+        run: |
+          docker compose run --rm --no-deps caddy caddy validate --config /etc/caddy/Caddyfile
+          docker compose up -d --force-recreate --no-deps --wait caddy
 
       - name: Verificar estado de los servicios
         run: docker compose ps
