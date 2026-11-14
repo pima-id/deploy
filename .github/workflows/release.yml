@@ -81,6 +81,28 @@ jobs:
           fi
           echo "El .env tiene las $(grep -coE '\$\{[A-Z_][A-Z0-9_]*:\?' docker-compose.yml) obligatorias."
 
+      # Cada host de CONSOLE_DOMAIN despues del primero lleva `http://` escrito.
+      #
+      # El Caddyfile abre ese bloque con `http://{$CONSOLE_DOMAIN}`, y Caddy expande la variable antes
+      # de parsear: con `a.com,b.com` el `http://` solo alcanza a `a.com`. `b.com` queda sin esquema,
+      # que en Caddy significa HTTPS: activa el HTTPS automatico, redirige el puerto 80 con un 308
+      # y no se atiende por HTTP. Detras de Cloudflare y Plesk, que le hablan HTTP, eso es un bucle de
+      # redirecciones. Paso el 2026-11-14 con la puerta de BIDA, y el 308 lo devolvia Caddy: ni Plesk
+      # ni Cloudflare. Ninguna opcion global de Caddy lo evita (`disable_redirects` y `off` dejan el
+      # host sirviendose solo por HTTPS), asi que se exige el esquema y se avisa antes de desplegar.
+      - name: Comprobar que los hosts adicionales de la consola llevan http://
+        run: |
+          dom=$(sed -n 's/^[[:space:]]*CONSOLE_DOMAIN=//p' .env | tail -1 | tr -d "\"' \r")
+          sin=$(printf '%s' "$dom" | tr ',' '\n' | tail -n +2 | grep -v '^http://' | grep -v '^$' || true)
+          if [ -n "$sin" ]; then
+            echo "ERROR: estos hosts de CONSOLE_DOMAIN no llevan http://, y Caddy los redirige a HTTPS en bucle:"
+            printf '  %s\n' $sin
+            echo ""
+            echo "Ejemplo: CONSOLE_DOMAIN=consola.ejemplo.com,http://app.otra-puerta.com"
+            exit 1
+          fi
+          echo "CONSOLE_DOMAIN: los hosts adicionales llevan http://."
+
       # v4 corre sobre Node 24 y exige un runner >= 2.327.1. Este job no corre en un runner de
       # GitHub sino en el self-hosted del VPS, y la API devuelve su version como `null` — pero el
       # runner la imprime en el log de sus propias corridas: **2.337.0**, comodo por encima del
